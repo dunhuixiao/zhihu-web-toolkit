@@ -4,10 +4,10 @@ import { promisify } from 'node:util';
 import path from 'node:path';
 
 const execFileAsync = promisify(execFile);
-const outFile = path.resolve('dist/zhihu-hide-menu-toolkit.user.js');
+const outFile = path.resolve('dist/zhihu-hide-toolkit.user.js');
 const packageJson = JSON.parse(await readFile(path.resolve('package.json'), 'utf8'));
 const userscriptHeader = `// ==UserScript==
-// @name         zhihu-hide-menu
+// @name         zhihu-hide-toolkit
 // @version      ${packageJson.version}
 // @author       you
 // @match        https://www.zhihu.com/*

@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         zhihu-hide-menu
+// @name         zhihu-hide-toolkit
 // @version      0.0.5
 // @author       you
 // @match        https://www.zhihu.com/*

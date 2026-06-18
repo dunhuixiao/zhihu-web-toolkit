@@ -1,11 +1,11 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
-const files = ['dist/zhihu-hide-menu-toolkit.user.js'];
+const files = ['dist/zhihu-hide-toolkit.user.js'];
 const packageJson = JSON.parse(await readFile(path.resolve('package.json'), 'utf8'));
 const requiredMetadata = [
   ['userscript header', /^\/\/ ==UserScript==/],
-  ['script name', /\/\/ @name\s+zhihu-hide-menu/],
+  ['script name', /\/\/ @name\s+zhihu-hide-toolkit/],
   ['script version', new RegExp(`// @version\\s+${packageJson.version.replaceAll('.', '\\.')}`)],
   ['script author', /\/\/ @author\s+you/],
   ['strict mode body', /(["'])use strict\1;?/],

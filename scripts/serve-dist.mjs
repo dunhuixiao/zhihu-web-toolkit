@@ -15,11 +15,7 @@ const server = http.createServer(async (req, res) => {
     const url = new URL(req.url || '/', `http://${host}:${port}`);
     const pathname = decodeURIComponent(url.pathname);
     const basename = path.basename(pathname);
-    const allowed =
-      basename === 'zhihu-hide-menu-toolkit.user.js' ||
-      basename === 'zhihu-hide-menu-toolkit.smoke.user.js' ||
-      basename === 'zhihu-hide-menu-toolkit.legacy.user.js' ||
-      basename === 'zhihu-hide-menu-toolkit.connectedgraph.user.js';
+    const allowed = basename === 'zhihu-hide-toolkit.user.js';
 
     if (!allowed) {
       res.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' });
@@ -44,8 +40,5 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(port, host, () => {
   console.log(`Serving userscripts on http://${host}:${port}/`);
-  console.log(`Smoke:  http://${host}:${port}/zhihu-hide-menu-toolkit.smoke.user.js`);
-  console.log(`Formal: http://${host}:${port}/zhihu-hide-menu-toolkit.user.js`);
-  console.log(`Legacy: http://${host}:${port}/zhihu-hide-menu-toolkit.legacy.user.js`);
-  console.log(`Reference-name replacement: http://${host}:${port}/zhihu-hide-menu-toolkit.connectedgraph.user.js`);
+  console.log(`Userscript: http://${host}:${port}/zhihu-hide-toolkit.user.js`);
 });

@@ -1,4 +1,4 @@
-# zhihu-hide-menu-toolkit
+# zhihu-hide-toolkit
 
 A Tampermonkey/Violentmonkey userscript toolkit for a quieter Zhihu reading experience.
 
@@ -17,14 +17,14 @@ npm run where
 The installable userscript is generated at:
 
 ```text
-dist/zhihu-hide-menu-toolkit.user.js
+dist/zhihu-hide-toolkit.user.js
 ```
 
 ## Chrome debug checklist
 
 1. Rebuild with `npm run build`.
-2. Replace the Tampermonkey script content with `dist/zhihu-hide-menu-toolkit.user.js`, or run `npm run serve:dist` and open `http://127.0.0.1:8797/zhihu-hide-menu-toolkit.user.js`.
-3. Confirm the Tampermonkey script header shows `@name zhihu-hide-menu`, `@version 0.0.5`, and `@author you`.
+2. Replace the Tampermonkey script content with `dist/zhihu-hide-toolkit.user.js`, or run `npm run serve:dist` and open `http://127.0.0.1:8797/zhihu-hide-toolkit.user.js`.
+3. Confirm the Tampermonkey script header shows `@name zhihu-hide-toolkit`, `@version 0.0.5`, and `@author you`.
 4. Refresh Zhihu and search the Console for `[zhmt]`.
 
 Expected startup logs:

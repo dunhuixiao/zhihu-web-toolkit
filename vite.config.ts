@@ -14,7 +14,7 @@ export default defineConfig({
     monkey({
       entry: 'src/main.ts',
       userscript: {
-        name: 'zhihu-hide-menu',
+        name: 'zhihu-hide-toolkit',
         version: packageJson.version,
         author: 'you',
         match: ['https://www.zhihu.com/*', 'https://zhihu.com/*', 'https://zhuanlan.zhihu.com/*'],
@@ -29,7 +29,7 @@ export default defineConfig({
         connect: ['www.zhihu.com', 'zhihu.com', 'zhuanlan.zhihu.com', '*.zhimg.com'],
       },
       build: {
-        fileName: 'zhihu-hide-menu-toolkit.user.js',
+        fileName: 'zhihu-hide-toolkit.user.js',
       },
     }),
   ],

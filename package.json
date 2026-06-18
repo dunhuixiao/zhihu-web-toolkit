@@ -1,5 +1,5 @@
 {
-  "name": "zhihu-hide-menu-toolkit",
+  "name": "zhihu-hide-toolkit",
   "version": "0.0.5",
   "private": true,
   "type": "module",
@@ -8,10 +8,10 @@
     "dev": "vite --host 127.0.0.1",
     "build:vite": "vite build",
     "build": "node scripts/build-userscript.mjs",
-    "check:userscript": "node --check dist/zhihu-hide-menu-toolkit.user.js && node scripts/check-userscript.mjs",
+    "check:userscript": "node --check dist/zhihu-hide-toolkit.user.js && node scripts/check-userscript.mjs",
     "serve:dist": "node scripts/serve-dist.mjs",
     "verify": "npm run typecheck && npm run test && npm run build && npm run check:userscript",
-    "where": "node -e \"console.log(require('path').resolve('dist/zhihu-hide-menu-toolkit.user.js'))\"",
+    "where": "node -e \"console.log(require('path').resolve('dist/zhihu-hide-toolkit.user.js'))\"",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
