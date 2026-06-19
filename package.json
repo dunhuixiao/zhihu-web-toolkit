@@ -1,0 +1,31 @@
+{
+  "name": "zhihu-web-toolkit",
+  "version": "0.1.0",
+  "description": "A modular Tampermonkey userscript toolkit for cleaning up Zhihu web UI.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "tampermonkey",
+    "userscript",
+    "zhihu",
+    "vite"
+  ],
+  "license": "MIT",
+  "files": [
+    "dist"
+  ],
+  "devDependencies": {
+    "@types/node": "^25.9.3",
+    "jsdom": "^29.1.1",
+    "typescript": "^5.9.3",
+    "vite": "^8.0.16",
+    "vite-plugin-monkey": "^8.0.6",
+    "vitest": "^4.1.9"
+  }
+}
