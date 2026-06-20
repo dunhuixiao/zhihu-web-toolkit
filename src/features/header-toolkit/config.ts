@@ -22,6 +22,33 @@ export function toTightControl(element: Element | null, header: Element): Elemen
   return element.closest("a,button,[role='button']") || element.closest(".AppHeader-profile") || element;
 }
 
+export function isUsableControl(element: Element | null): boolean {
+  if (!(element instanceof HTMLElement)) {
+    return false;
+  }
+
+  const style = getComputedStyle(element);
+  const zIndex = Number.parseInt(style.zIndex, 10);
+
+  return (
+    style.display !== "none" &&
+    style.visibility !== "hidden" &&
+    style.pointerEvents !== "none" &&
+    (Number.isNaN(zIndex) || zIndex >= 0)
+  );
+}
+
+export function firstUsableControl(header: Element, candidates: Array<Element | null>): Element | null {
+  for (const candidate of candidates) {
+    const control = toTightControl(candidate, header);
+    if (isUsableControl(control)) {
+      return control;
+    }
+  }
+
+  return null;
+}
+
 export function findHeaderControl(header: Element, options: HeaderControlOptions): Element | null {
   const candidates = Array.from(header.querySelectorAll("a,button,[role='button'],[aria-label],[title]"));
 
@@ -100,6 +127,7 @@ export const ACTION_ITEMS: HeaderItemConfig[] = [
     label: "消息",
     fallbackHref: "https://www.zhihu.com/notifications",
     find: (header) =>
+      firstUsableControl(header, [header.querySelector(".AppHeader-messages")]) ||
       findHeaderControl(header, {
         texts: ["消息", "通知"],
         ariaParts: ["消息", "通知"],
@@ -112,6 +140,7 @@ export const ACTION_ITEMS: HeaderItemConfig[] = [
     label: "私信",
     fallbackHref: "https://www.zhihu.com/inbox",
     find: (header) =>
+      firstUsableControl(header, [header.querySelector(".AppHeader-inbox")]) ||
       findHeaderControl(header, {
         texts: ["私信"],
         ariaParts: ["私信"],
@@ -123,14 +152,17 @@ export const ACTION_ITEMS: HeaderItemConfig[] = [
     key: "profile",
     label: "个人信息",
     find: (header) => {
-      const profile =
+      const profile = firstUsableControl(header, [
+        header.querySelector(".AppHeader-profileEntry"),
         header.querySelector(".AppHeader-profile") ||
-        header.querySelector("[class*='Profile']") ||
-        header.querySelector("[aria-label*='个人']") ||
-        header.querySelector("[aria-label*='头像']") ||
-        header.querySelector("img.Avatar");
+          header.querySelector(".AppHeader-profileAvatar") ||
+          header.querySelector("img.Avatar") ||
+          header.querySelector("[aria-label*='头像']"),
+        header.querySelector("[aria-label*='个人']"),
+        header.querySelector("[class*='Profile']"),
+      ]);
 
-      return toTightControl(profile, header);
+      return profile;
     },
   },
 ];

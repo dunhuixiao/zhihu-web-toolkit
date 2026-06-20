@@ -8,9 +8,15 @@ export function createZhihuFixture(): void {
           <a href="https://www.zhihu.com/">推荐</a>
           <a href="https://www.zhihu.com/hot">热榜</a>
           <form class="SearchBar"><input placeholder="搜索知乎内容" /></form>
-          <a href="https://www.zhihu.com/notifications">消息</a>
-          <a href="https://www.zhihu.com/messages">私信</a>
-          <button class="AppHeader-profile" aria-label="个人信息">个人信息</button>
+          <button class="Button AppHeader-messages" type="button" aria-label="消息">
+            <span>消息</span>
+          </button>
+          <button class="Button AppHeader-inbox" type="button" aria-label="私信">
+            <span>私信</span>
+          </button>
+          <button class="Button AppHeader-profileEntry AppHeader-profile" type="button" aria-label="个人信息">
+            <img class="Avatar AppHeader-profileAvatar" src="https://picx.zhimg.com/test-avatar.jpg" alt="点击打开用户的主页" />
+          </button>
           <div class="css-ruapjk"></div>
           <a href="https://www.zhihu.com/question">提问</a>
         </header>
@@ -41,5 +47,6 @@ export function createZhihuFixture(): void {
         <div class="WriteArea Card css-1x8qqvf">write</div>
       </main>
     </div>
+    <button class="CornerButton" aria-label="回到顶部">回到顶部</button>
   `;
 }

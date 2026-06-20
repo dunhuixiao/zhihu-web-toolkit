@@ -4,7 +4,6 @@ import {
   HEADER_ATTR,
   HIDE_SELECTORS,
   MOVED_ITEM_ATTR,
-  ORIGINAL_HIDDEN_CLASS,
   TOP_BANNER_SELECTORS,
   FLOATING_CONTROLS_ID,
   WORD_BLOCK_BUTTON_ID,
@@ -13,7 +12,12 @@ import { clearFixedPosition, getHref, isZhihuHost, readText, visibleCount } from
 import { createToolkitState, type ToolkitState } from "./shared/state";
 import type { DestroyOptions, ToolkitApi, ToolkitReport } from "./shared/types";
 import { currentThemeMode, mountFloatingControls, removeFloatingControls } from "./features/floating-controls/floating-controls";
-import { buildToolkitHeader, clearHeaderContainerPosition, findOriginalHeader } from "./features/header-toolkit/header-toolkit";
+import {
+  buildToolkitHeader,
+  clearHeaderContainerPosition,
+  findOriginalHeader,
+  insertToolkitHeader,
+} from "./features/header-toolkit/header-toolkit";
 import { injectStyle, removeStyle } from "./features/hide-elements/styles";
 
 declare global {
@@ -46,6 +50,32 @@ export function installToolkit(): ToolkitApi {
   return api;
 }
 
+function clearHeaderObserver(state: ToolkitState): void {
+  state.headerObserver?.disconnect();
+  state.headerObserver = null;
+}
+
+function waitForHeader(state: ToolkitState): void {
+  if (state.headerObserver || state.applied) {
+    return;
+  }
+
+  const observeTarget = document.documentElement || document.body;
+  if (!observeTarget) {
+    return;
+  }
+
+  state.headerObserver = new MutationObserver(() => {
+    if (!findOriginalHeader()) {
+      return;
+    }
+
+    clearHeaderObserver(state);
+    apply(state);
+  });
+  state.headerObserver.observe(observeTarget, { childList: true, subtree: true });
+}
+
 export function apply(state: ToolkitState): ToolkitReport {
   if (state.applied) {
     destroy(state, { silent: true });
@@ -60,9 +90,11 @@ export function apply(state: ToolkitState): ToolkitReport {
 
   const originalHeader = findOriginalHeader();
   if (!originalHeader) {
+    waitForHeader(state);
     console.warn("[zhihu-web-toolkit] No Zhihu header found. No changes applied.");
     return report(state);
   }
+  clearHeaderObserver(state);
 
   const shell = buildToolkitHeader(state, originalHeader);
 
@@ -71,15 +103,9 @@ export function apply(state: ToolkitState): ToolkitReport {
 
   injectStyle();
 
-  originalHeader.classList.add(ORIGINAL_HIDDEN_CLASS);
-  clearFixedPosition(originalHeader as HTMLElement);
   clearFixedPosition(shell.header);
 
-  if (originalHeader.parentNode) {
-    originalHeader.parentNode.insertBefore(shell.header, originalHeader.nextSibling);
-  } else {
-    document.body.insertBefore(shell.header, document.body.firstChild);
-  }
+  insertToolkitHeader(shell.header, originalHeader);
 
   clearHeaderContainerPosition(shell.header);
 
@@ -93,21 +119,21 @@ export function apply(state: ToolkitState): ToolkitReport {
 }
 
 export function destroy(state: ToolkitState, options?: DestroyOptions): void {
-  for (let i = state.movedItems.length - 1; i >= 0; i -= 1) {
-    const item = state.movedItems[i];
-    const { placeholder, node } = item;
+  clearHeaderObserver(state);
+
+  for (let index = state.movedItems.length - 1; index >= 0; index -= 1) {
+    const { node, placeholder } = state.movedItems[index];
 
     node.removeAttribute(MOVED_ITEM_ATTR);
 
-    if (placeholder.parentNode && node) {
+    if (placeholder.parentNode) {
       placeholder.parentNode.insertBefore(node, placeholder);
-      placeholder.parentNode.removeChild(placeholder);
+      placeholder.remove();
     } else {
       placeholder.remove();
     }
   }
 
-  state.originalHeader?.classList.remove(ORIGINAL_HIDDEN_CLASS);
   state.rebuiltHeader?.remove();
   removeFloatingControls();
   removeStyle();

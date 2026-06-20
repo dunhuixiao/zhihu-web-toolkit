@@ -1,6 +1,6 @@
 {
   "name": "zhihu-web-toolkit",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A modular Tampermonkey userscript toolkit for cleaning up Zhihu web UI.",
   "private": true,
   "type": "module",

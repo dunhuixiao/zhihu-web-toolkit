@@ -5,6 +5,7 @@ export interface ToolkitState {
   originalHeader: Element | null;
   rebuiltHeader: HTMLElement | null;
   floatingControls: HTMLElement | null;
+  headerObserver: MutationObserver | null;
   movedItems: MovedItem[];
   missing: string[];
 }
@@ -15,6 +16,7 @@ export function createToolkitState(): ToolkitState {
     originalHeader: null,
     rebuiltHeader: null,
     floatingControls: null,
+    headerObserver: null,
     movedItems: [],
     missing: [],
   };

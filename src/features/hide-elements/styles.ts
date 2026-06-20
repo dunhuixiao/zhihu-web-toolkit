@@ -3,6 +3,8 @@ import {
   FALLBACK_ATTR,
   HEADER_ATTR,
   HIDE_SELECTORS,
+  MOVED_ITEM_ATTR,
+  NATIVE_BACK_TO_TOP_SELECTORS,
   ORIGINAL_HIDDEN_CLASS,
   STYLE_ID,
   TOP_BANNER_SELECTORS,
@@ -22,6 +24,12 @@ export function buildToolkitCss(): string {
   display: none !important;
 }
 
+${NATIVE_BACK_TO_TOP_SELECTORS.join(",\n")} {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
 header[${HEADER_ATTR}='true'],
 html body .AppHeader,
 html body header.AppHeader,
@@ -36,9 +44,24 @@ html body .Sticky.AppHeader {
 header[${HEADER_ATTR}='true'] {
   width: 100% !important;
   z-index: auto !important;
-  background: #fff !important;
-  border-bottom: 1px solid #ebebeb !important;
+  background: var(--GBK99A, #fff) !important;
+  border-bottom: 1px solid var(--GBK10A, #ebebeb) !important;
   box-shadow: none !important;
+  color: var(--GBK04A, #121212) !important;
+  color-scheme: light !important;
+}
+
+header[${HEADER_ATTR}='true'] *,
+header[${HEADER_ATTR}='true'] *::before,
+header[${HEADER_ATTR}='true'] *::after {
+  box-sizing: border-box !important;
+}
+
+html[data-theme='dark'] header[${HEADER_ATTR}='true'] {
+  background: var(--GBK99A, #1a1a1a) !important;
+  border-bottom-color: var(--GBK20A, #2e2e2e) !important;
+  color: var(--GBK04A, #f6f6f6) !important;
+  color-scheme: dark !important;
 }
 
 .zhihu-web-toolkit-inner {
@@ -81,8 +104,61 @@ header[${HEADER_ATTR}='true'] [role='button'] {
   flex-shrink: 0 !important;
 }
 
+header[${HEADER_ATTR}='true'] a {
+  text-decoration: none !important;
+}
+
+header[${HEADER_ATTR}='true'] [${MOVED_ITEM_ATTR}='follow'],
+header[${HEADER_ATTR}='true'] [${MOVED_ITEM_ATTR}='recommend'],
+header[${HEADER_ATTR}='true'] [${MOVED_ITEM_ATTR}='hot'] {
+  display: inline-flex !important;
+  align-items: center !important;
+  height: 52px !important;
+  padding: 0 10px !important;
+  font-size: 15px !important;
+  line-height: 52px !important;
+}
+
+header[${HEADER_ATTR}='true'] input,
+header[${HEADER_ATTR}='true'] textarea {
+  color: var(--GBK04A, #121212) !important;
+  background: var(--GBK99A, #fff) !important;
+  border-color: var(--GBK10A, #ebebeb) !important;
+}
+
+html[data-theme='dark'] header[${HEADER_ATTR}='true'] input,
+html[data-theme='dark'] header[${HEADER_ATTR}='true'] textarea {
+  color: var(--GBK04A, #f6f6f6) !important;
+  background: var(--GBK99A, #1a1a1a) !important;
+  border-color: var(--GBK20A, #2e2e2e) !important;
+}
+
+header[${HEADER_ATTR}='true'] input::placeholder,
+header[${HEADER_ATTR}='true'] textarea::placeholder {
+  color: var(--GBK07A, #8590a6) !important;
+}
+
+header[${HEADER_ATTR}='true'] .Avatar,
+header[${HEADER_ATTR}='true'] .AppHeader-profileAvatar {
+  width: 30px !important;
+  height: 30px !important;
+  border-radius: 50% !important;
+  object-fit: cover !important;
+  display: block !important;
+}
+
+header[${HEADER_ATTR}='true'] .AppHeader-profile,
+header[${HEADER_ATTR}='true'] .AppHeader-profileEntry {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 30px !important;
+  height: 52px !important;
+  padding: 0 4px !important;
+}
+
 header[${HEADER_ATTR}='true'] [${FALLBACK_ATTR}='true'] {
-  color: #121212 !important;
+  color: inherit !important;
   display: inline-flex !important;
   align-items: center !important;
   height: 32px !important;

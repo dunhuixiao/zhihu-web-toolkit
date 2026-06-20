@@ -59,5 +59,13 @@ export function buildFloatingControlsCss(): string {
   height: 20px !important;
   flex: 0 0 20px !important;
 }
+
+#${FLOATING_CONTROLS_ID} .zhihu-web-toolkit-square-button svg [fill='none'] {
+  fill: none !important;
+}
+
+#${FLOATING_CONTROLS_ID} .zhihu-web-toolkit-square-button svg [stroke] {
+  stroke: currentColor !important;
+}
 `;
 }
