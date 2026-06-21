@@ -121,6 +121,14 @@ export function apply(state: ToolkitState): ToolkitReport {
 export function destroy(state: ToolkitState, options?: DestroyOptions): void {
   clearHeaderObserver(state);
 
+  for (let index = state.geometryRestorers.length - 1; index >= 0; index -= 1) {
+    state.geometryRestorers[index]();
+  }
+
+  for (let index = state.cleanupCallbacks.length - 1; index >= 0; index -= 1) {
+    state.cleanupCallbacks[index]();
+  }
+
   for (let index = state.movedItems.length - 1; index >= 0; index -= 1) {
     const { node, placeholder } = state.movedItems[index];
 
@@ -143,6 +151,8 @@ export function destroy(state: ToolkitState, options?: DestroyOptions): void {
   state.rebuiltHeader = null;
   state.floatingControls = null;
   state.movedItems = [];
+  state.geometryRestorers = [];
+  state.cleanupCallbacks = [];
   state.missing = [];
 
   if (!options?.silent) {

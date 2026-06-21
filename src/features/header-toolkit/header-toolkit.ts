@@ -71,10 +71,12 @@ function stripDuplicateIds(root: Element): void {
   root.querySelectorAll("[id]").forEach((element) => element.removeAttribute("id"));
 }
 
-function cloneHeaderItem(node: Element, key: string, label: string): Element {
+function cloneHeaderItem(state: ToolkitState, node: Element, key: string, label: string): Element {
   const proxy = node.cloneNode(true) as Element;
   stripDuplicateIds(proxy);
   prepareHeaderItem(proxy, key, label);
+  syncClonedImages(node, proxy);
+  watchClonedImages(state, node, proxy);
 
   if (proxy instanceof HTMLElement) {
     clearFixedPosition(proxy);
@@ -86,6 +88,52 @@ function cloneHeaderItem(node: Element, key: string, label: string): Element {
   });
 
   return proxy;
+}
+
+function syncClonedImages(sourceRoot: Element, proxyRoot: Element): void {
+  const sourceImages =
+    sourceRoot instanceof HTMLImageElement ? [sourceRoot] : Array.from(sourceRoot.querySelectorAll("img"));
+  const proxyImages = proxyRoot instanceof HTMLImageElement ? [proxyRoot] : Array.from(proxyRoot.querySelectorAll("img"));
+
+  sourceImages.forEach((sourceImage, index) => {
+    const proxyImage = proxyImages[index];
+    const source = sourceImage.currentSrc || sourceImage.src || sourceImage.getAttribute("src");
+    const alt = sourceImage.getAttribute("alt");
+
+    if (proxyImage && source) {
+      proxyImage.removeAttribute("srcset");
+      proxyImage.src = source;
+      proxyImage.setAttribute("src", source);
+      if (alt) {
+        proxyImage.setAttribute("alt", alt);
+      }
+    }
+  });
+}
+
+function watchClonedImages(state: ToolkitState, sourceRoot: Element, proxyRoot: Element): void {
+  const sourceImages =
+    sourceRoot instanceof HTMLImageElement ? [sourceRoot] : Array.from(sourceRoot.querySelectorAll("img"));
+  const proxyImages = proxyRoot instanceof HTMLImageElement ? [proxyRoot] : Array.from(proxyRoot.querySelectorAll("img"));
+
+  sourceImages.forEach((sourceImage, index) => {
+    const proxyImage = proxyImages[index];
+    if (!proxyImage) {
+      return;
+    }
+
+    const sync = () => syncClonedImages(sourceRoot, proxyRoot);
+    const observer = new MutationObserver(sync);
+    observer.observe(sourceImage, {
+      attributes: true,
+      attributeFilter: ["src", "srcset", "alt"],
+    });
+    sourceImage.addEventListener("load", sync);
+    state.cleanupCallbacks.push(() => {
+      observer.disconnect();
+      sourceImage.removeEventListener("load", sync);
+    });
+  });
 }
 
 function findSearchInput(root: Element | null): HTMLInputElement | HTMLTextAreaElement | null {
@@ -179,7 +227,8 @@ function proxySearch(proxy: HTMLElement, nativeSearch: Element): void {
 }
 
 const ACTIVATION_SELECTOR = "a,button,input,textarea,select,[role='button'],[tabindex]";
-const MOVED_NATIVE_ITEM_KEYS = new Set(["messages", "inbox", "profile"]);
+const NAVIGATION_ITEM_KEYS = new Set(["home", "follow", "recommend", "hot"]);
+const NATIVE_POPOVER_ITEM_KEYS = new Set(["messages", "inbox", "profile"]);
 
 function findActivationTarget(node: Element): HTMLElement | null {
   if (node instanceof HTMLElement && node.matches(ACTIVATION_SELECTOR)) {
@@ -251,12 +300,103 @@ function clickNative(node: Element, fallbackHref?: string): void {
   }
 }
 
+function bindNativeGeometryToProxy(state: ToolkitState, nativeNode: Element, proxy: Element): void {
+  if (!(nativeNode instanceof HTMLElement) || !(proxy instanceof HTMLElement)) {
+    return;
+  }
+
+  const originalGetBoundingClientRect = nativeNode.getBoundingClientRect;
+  nativeNode.getBoundingClientRect = () => proxy.getBoundingClientRect();
+  state.geometryRestorers.push(() => {
+    nativeNode.getBoundingClientRect = originalGetBoundingClientRect;
+  });
+}
+
+function withNativeGeometry(nativeNode: Element, proxy: Element, action: () => void): void {
+  if (!(nativeNode instanceof HTMLElement) || !(proxy instanceof HTMLElement)) {
+    action();
+    return;
+  }
+
+  const originalGetBoundingClientRect = nativeNode.getBoundingClientRect;
+  nativeNode.getBoundingClientRect = () => proxy.getBoundingClientRect();
+  try {
+    action();
+  } finally {
+    nativeNode.getBoundingClientRect = originalGetBoundingClientRect;
+  }
+}
+
 function proxyClick(proxy: Element, nativeNode: Element, fallbackHref?: string): void {
   proxy.addEventListener("click", (event) => {
     event.preventDefault();
     event.stopPropagation();
     clickNative(findEquivalentElement(event.target, proxy, nativeNode), fallbackHref);
   });
+}
+
+function findCurrentNativePopoverNode(key: string, initialNode: Element): Element {
+  const originalHeader = findOriginalHeader();
+
+  if (originalHeader) {
+    const currentNode = [...ACTION_ITEMS, ...HEADER_ITEMS].find((item) => item.key === key)?.find(originalHeader);
+    if (currentNode) {
+      return currentNode;
+    }
+  }
+
+  return initialNode;
+}
+
+function proxyNativePopoverClick(
+  state: ToolkitState,
+  proxy: Element,
+  nativeNode: Element,
+  key: string,
+  fallbackHref?: string,
+): void {
+  bindNativeGeometryToProxy(state, nativeNode, proxy);
+  proxy.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const currentNativeNode = findCurrentNativePopoverNode(key, nativeNode);
+    withNativeGeometry(currentNativeNode, proxy, () => clickNative(currentNativeNode, fallbackHref));
+  });
+}
+
+function createNavigationProxy(proxy: Element, href: string): HTMLAnchorElement {
+  const link = document.createElement("a");
+
+  Array.from(proxy.attributes).forEach((attribute) => {
+    if (!["href", "type", "disabled"].includes(attribute.name)) {
+      link.setAttribute(attribute.name, attribute.value);
+    }
+  });
+  while (proxy.firstChild) {
+    link.appendChild(proxy.firstChild);
+  }
+
+  link.href = href;
+  link.setAttribute("href", href);
+  return link;
+}
+
+function normalizeProxyNavigation(proxy: Element, node: Element, fallbackHref?: string): Element | null {
+  const href = getHref(node) || getHref(proxy) || fallbackHref;
+
+  if (!href) {
+    return null;
+  }
+
+  const navigationTarget = proxy instanceof HTMLAnchorElement ? proxy : proxy.querySelector("a");
+
+  if (navigationTarget instanceof HTMLAnchorElement) {
+    navigationTarget.href = href;
+    navigationTarget.setAttribute("href", href);
+    return proxy;
+  }
+
+  return createNavigationProxy(proxy, href);
 }
 
 export function isInsideMovedNode(state: ToolkitState, node: Element): boolean {
@@ -284,6 +424,7 @@ export function moveInto(
 }
 
 export function appendProxy(
+  state: ToolkitState,
   node: Element | null,
   destination: Element,
   key: string,
@@ -294,7 +435,7 @@ export function appendProxy(
     return false;
   }
 
-  const proxy = cloneHeaderItem(node, key, label);
+  let proxy = cloneHeaderItem(state, node, key, label);
   const href = getHref(proxy) || getHref(node) || fallbackHref;
 
   if (href && proxy instanceof HTMLAnchorElement && !proxy.href) {
@@ -303,6 +444,11 @@ export function appendProxy(
 
   if (key === "search") {
     proxySearch(proxy as HTMLElement, node);
+  } else if (NAVIGATION_ITEM_KEYS.has(key)) {
+    // Let navigation proxies use their own href so hidden native React controls are not clicked.
+    proxy = normalizeProxyNavigation(proxy, node, fallbackHref) || proxy;
+  } else if (NATIVE_POPOVER_ITEM_KEYS.has(key)) {
+    proxyNativePopoverClick(state, proxy, node, key, fallbackHref);
   } else {
     proxyClick(proxy, node, fallbackHref);
   }
@@ -334,11 +480,8 @@ export function appendItem(
 ): void {
   const node = item.find(header);
 
-  if (MOVED_NATIVE_ITEM_KEYS.has(item.key) && moveInto(state, node, destination, item.key, item.label)) {
-    return;
-  }
-
-  if (appendProxy(node, destination, item.key, item.label, item.fallbackHref)) {
+  // Zhihu's header is React-owned. Reparenting native controls breaks React's DOM reconciliation.
+  if (appendProxy(state, node, destination, item.key, item.label, item.fallbackHref)) {
     return;
   }
 
@@ -364,7 +507,11 @@ export function moveExtraHeaderControls(
     return;
   }
 
-  appendProxy(ruapjk, destination, "ruapjk", "顶部按钮");
+  if (ruapjk.querySelector(".AppHeader-profileEntry, .AppHeader-profile, .AppHeader-profileAvatar, img.Avatar")) {
+    return;
+  }
+
+  appendProxy(state, ruapjk, destination, "ruapjk", "顶部按钮");
 }
 
 export function clearHeaderContainerPosition(element: HTMLElement): void {
@@ -381,11 +528,8 @@ export function clearHeaderContainerPosition(element: HTMLElement): void {
 }
 
 export function insertToolkitHeader(header: HTMLElement, originalHeader: Element): void {
-  if (originalHeader.parentNode) {
-    originalHeader.parentNode.insertBefore(header, originalHeader.nextSibling);
-    return;
-  }
-
+  // Keep toolkit-owned DOM outside Zhihu's React root for the same reconciliation reason.
+  void originalHeader;
   document.body.insertBefore(header, document.body.firstChild);
 }
 
@@ -396,7 +540,7 @@ export function buildToolkitHeader(state: ToolkitState, originalHeader: Element)
   HEADER_ITEMS.forEach((item) => appendItem(state, originalHeader, shell.nav, item));
 
   if (searchNode) {
-    appendProxy(searchNode, shell.search, "search", "搜索");
+    appendProxy(state, searchNode, shell.search, "search", "搜索");
   } else {
     state.missing.push("search");
   }

@@ -29,6 +29,11 @@ export function isUsableControl(element: Element | null): boolean {
 
   const style = getComputedStyle(element);
   const zIndex = Number.parseInt(style.zIndex, 10);
+  const className = String(element.className || "");
+
+  if (className.includes("creatorHintPopover") || className.includes("CreatorHint")) {
+    return false;
+  }
 
   return (
     style.display !== "none" &&
@@ -36,6 +41,25 @@ export function isUsableControl(element: Element | null): boolean {
     style.pointerEvents !== "none" &&
     (Number.isNaN(zIndex) || zIndex >= 0)
   );
+}
+
+function firstUsableProfileControl(header: Element): Element | null {
+  const candidates = Array.from(
+    header.querySelectorAll(".AppHeader-profileEntry, .AppHeader-profile, .AppHeader-profileAvatar, img.Avatar"),
+  );
+
+  for (const candidate of candidates) {
+    const control = toTightControl(candidate, header);
+    if (isUsableControl(control) && control?.querySelector(".Avatar, .AppHeader-profileAvatar, img")) {
+      return control;
+    }
+  }
+
+  return firstUsableControl(header, [
+    header.querySelector("[aria-label*='个人']"),
+    header.querySelector("[aria-label*='头像']"),
+    header.querySelector("[class*='Profile']"),
+  ]);
 }
 
 export function firstUsableControl(header: Element, candidates: Array<Element | null>): Element | null {
@@ -138,31 +162,19 @@ export const ACTION_ITEMS: HeaderItemConfig[] = [
   {
     key: "inbox",
     label: "私信",
-    fallbackHref: "https://www.zhihu.com/inbox",
+    fallbackHref: "https://www.zhihu.com/messages",
     find: (header) =>
       firstUsableControl(header, [header.querySelector(".AppHeader-inbox")]) ||
       findHeaderControl(header, {
         texts: ["私信"],
         ariaParts: ["私信"],
         classParts: ["Inbox"],
-        hrefParts: ["/inbox"],
+        hrefParts: ["/messages", "/inbox"],
       }),
   },
   {
     key: "profile",
     label: "个人信息",
-    find: (header) => {
-      const profile = firstUsableControl(header, [
-        header.querySelector(".AppHeader-profileEntry"),
-        header.querySelector(".AppHeader-profile") ||
-          header.querySelector(".AppHeader-profileAvatar") ||
-          header.querySelector("img.Avatar") ||
-          header.querySelector("[aria-label*='头像']"),
-        header.querySelector("[aria-label*='个人']"),
-        header.querySelector("[class*='Profile']"),
-      ]);
-
-      return profile;
-    },
+    find: (header) => firstUsableProfileControl(header),
   },
 ];

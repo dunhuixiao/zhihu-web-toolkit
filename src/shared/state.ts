@@ -7,6 +7,8 @@ export interface ToolkitState {
   floatingControls: HTMLElement | null;
   headerObserver: MutationObserver | null;
   movedItems: MovedItem[];
+  geometryRestorers: Array<() => void>;
+  cleanupCallbacks: Array<() => void>;
   missing: string[];
 }
 
@@ -18,6 +20,8 @@ export function createToolkitState(): ToolkitState {
     floatingControls: null,
     headerObserver: null,
     movedItems: [],
+    geometryRestorers: [],
+    cleanupCallbacks: [],
     missing: [],
   };
 }

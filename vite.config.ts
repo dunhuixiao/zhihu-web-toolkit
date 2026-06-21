@@ -8,6 +8,7 @@ export default defineConfig({
       userscript: {
         name: "知乎网页工具箱",
         namespace: "https://github.com/dunhuixiao/zhihu-web-toolkit",
+        author: "dunhui.xiao",
         match: ["https://www.zhihu.com/*"],
         "run-at": "document-end",
         grant: "none",
