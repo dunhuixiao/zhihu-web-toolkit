@@ -8,15 +8,17 @@ The production userscript is built from TypeScript with Vite and `vite-plugin-mo
 
 - Rebuild the Zhihu header into a custom toolkit header.
 - Hide configured Zhihu cards, sidebars, footer, write area, and original top banner/header.
-- Move `.css-ruapjk` into the rebuilt header.
+- Proxy `.css-ruapjk` into the rebuilt header without reparenting Zhihu React-owned nodes.
+- Provide floating controls for the placeholder word-block entry, theme switching, and back-to-top.
 - Expose idempotent debug APIs through `window.__zhihuWebToolkit`.
 
 ## Repository Layout
 
 - `src/main.ts`: userscript entrypoint. Keep it thin; it should only install/start the toolkit.
 - `src/toolkit.ts`: top-level toolkit API, lifecycle, report, install, apply, and destroy orchestration.
-- `src/features/header-toolkit/`: header rebuild logic, header item lookup, node movement, and extra header controls.
+- `src/features/header-toolkit/`: header rebuild orchestration, item lookup, header detection, clone/proxy helpers, search proxying, popover geometry proxying, and extra header controls.
 - `src/features/hide-elements/`: style generation and style injection/removal for hidden elements.
+- `src/features/floating-controls/`: floating buttons, native back-to-top proxying, theme mode handling, and the isolated best-effort native theme bridge.
 - `src/shared/`: constants, DOM helpers, state, and public types.
 - `tests/`: Vitest/jsdom fixtures and behavior tests.
 - `dist/`: generated userscript output. Do not edit files here by hand.
@@ -35,9 +37,10 @@ The production userscript is built from TypeScript with Vite and `vite-plugin-mo
 - Use TypeScript strict-mode friendly code.
 - Keep feature logic out of `src/main.ts`; add behavior in feature modules or `src/toolkit.ts`.
 - Keep DOM selectors and stable attributes centralized in `src/shared/constants.ts` or feature config files.
-- When adding a new Zhihu class to hide, update `HIDE_SELECTORS` in `src/shared/constants.ts` and add/adjust tests.
-- DOM mutations must be idempotent. Repeated `apply()` calls must not create duplicate headers, styles, or moved nodes.
-- DOM mutations must be reversible. `destroy()` should restore moved nodes using placeholders and remove injected styles/header nodes.
+- When adding a new Zhihu class to hide, update `HIDE_SELECTOR_CONFIGS`, `AD_SELECTOR_CONFIGS`, or `TOP_BANNER_SELECTOR_CONFIGS` in `src/shared/constants.ts` with a reason and `volatile: true` for hash classes, then add/adjust tests.
+- Keep React-internal theme switching isolated in `src/features/floating-controls/native-theme.ts`; it must remain best-effort and fall back to reload.
+- DOM mutations must be idempotent. Repeated `apply()` calls must not create duplicate headers, styles, or floating controls.
+- DOM mutations must be reversible. `destroy()` should remove injected styles/header/floating nodes and restore any patched geometry methods.
 - Preserve the debug API: `window.__zhihuWebToolkit`.
 - Do not manually edit `dist/`; run `npm run build` instead.
 - Avoid reading or depending on cookies, localStorage, sessionStorage, or private account state.
@@ -52,9 +55,12 @@ The production userscript is built from TypeScript with Vite and `vite-plugin-mo
   - `npm audit --audit-level=moderate`
 - Add or update jsdom tests when behavior changes, especially for:
   - Hidden selector injection.
+  - Hidden selector report metadata.
   - Original header/banner hiding.
   - Rebuilt header contents.
-  - `.css-ruapjk` movement.
+  - `.css-ruapjk` proxying.
+  - Native popover trigger proxying and geometry.
+  - Native theme fallback behavior.
   - `apply()` idempotency.
   - `destroy()` restoration.
 - For real Zhihu DOM changes, verify by injecting `dist/zhihu-web-toolkit.user.js` into an authenticated `https://www.zhihu.com/` page and checking `window.__zhihuWebToolkit.report()`.
@@ -67,8 +73,10 @@ When browser verification is needed:
 - Verify that the rebuilt header exists once.
 - Verify that the original `AppHeader`/top banner is hidden.
 - Verify that configured hidden selectors have `visibleCount: 0`.
-- Verify that `.css-ruapjk` is inside the rebuilt header and visible.
+- Verify that `.css-ruapjk` is represented inside the rebuilt header and visible.
 - Verify that the header is not fixed and scrolls with the page.
+- Verify that message, inbox, and profile popovers open near the rebuilt header controls.
+- Verify that theme switching works or cleanly falls back to the native reload flow.
 - Verify that `window.__zhihuWebToolkit` exists.
 
 ## Safety Notes

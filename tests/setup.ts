@@ -9,6 +9,7 @@ beforeEach(() => {
   resetNativeThemeReloader();
   window.history.replaceState({}, "", "/");
   vi.restoreAllMocks();
+  vi.spyOn(window, "scrollTo").mockImplementation(() => undefined);
   vi.spyOn(console, "info").mockImplementation(() => undefined);
   vi.spyOn(console, "warn").mockImplementation(() => undefined);
 });

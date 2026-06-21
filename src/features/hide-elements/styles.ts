@@ -5,7 +5,6 @@ import {
   HIDE_SELECTORS,
   MOVED_ITEM_ATTR,
   NATIVE_BACK_TO_TOP_SELECTORS,
-  ORIGINAL_HIDDEN_CLASS,
   STYLE_ID,
   TOP_BANNER_SELECTORS,
 } from "../../shared/constants";
@@ -18,10 +17,6 @@ export function buildToolkitCss(): string {
   display: none !important;
   visibility: hidden !important;
   pointer-events: none !important;
-}
-
-.${ORIGINAL_HIDDEN_CLASS} {
-  display: none !important;
 }
 
 ${NATIVE_BACK_TO_TOP_SELECTORS.join(",\n")} {

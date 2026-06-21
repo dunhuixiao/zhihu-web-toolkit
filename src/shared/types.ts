@@ -1,6 +1,8 @@
 export interface HiddenTargetReport {
   selector: string;
   count: number;
+  reason?: string;
+  volatile: boolean;
   visibleCount: number;
 }
 
@@ -24,6 +26,7 @@ export interface ToolkitReport {
   hiddenTopBanners: HiddenTargetReport[];
   keptItems: KeptItemReport[];
   missing: string[];
+  ruapjkProxied: boolean;
   ruapjkMoved: boolean;
 }
 
@@ -35,10 +38,4 @@ export interface ToolkitApi {
   apply: () => ToolkitReport;
   destroy: (options?: DestroyOptions) => void;
   report: () => ToolkitReport;
-}
-
-export interface MovedItem {
-  key: string;
-  node: Element;
-  placeholder: Comment;
 }

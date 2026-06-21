@@ -68,6 +68,51 @@ function installZhihuThemeFiber(setDarkTheme: (isDarkTheme: boolean) => void): v
   });
 }
 
+function installDeepZhihuThemeFiber(setDarkTheme: (isDarkTheme: boolean) => void, depth: number): void {
+  const rootElement = document.getElementById("root")!;
+  const rootFiber: TestReactFiber = { tag: 3 };
+  const userAgentProvider: TestReactFiber = {
+    memoizedProps: {
+      value: {
+        Mobile: false,
+        Wechat: false,
+        Zhihu: false,
+      },
+    },
+    return: rootFiber,
+    tag: 10,
+  };
+  const themeValueProvider: TestReactFiber = {
+    memoizedProps: { value: false },
+    return: userAgentProvider,
+    tag: 10,
+  };
+
+  rootFiber.child = userAgentProvider;
+  userAgentProvider.child = themeValueProvider;
+
+  let parent = themeValueProvider;
+  for (let index = 0; index < depth; index += 1) {
+    const filler: TestReactFiber = {
+      return: parent,
+      tag: 10,
+    };
+    parent.child = filler;
+    parent = filler;
+  }
+
+  parent.child = {
+    memoizedProps: { value: setDarkTheme },
+    return: themeValueProvider,
+    tag: 10,
+  };
+
+  Object.defineProperty(rootElement, "__reactContainer$deep", {
+    configurable: true,
+    value: rootFiber,
+  });
+}
+
 describe("zhihu-web-toolkit", () => {
   it("injects hide rules for configured selectors", () => {
     createZhihuFixture();
@@ -81,6 +126,14 @@ describe("zhihu-web-toolkit", () => {
     expect(style?.textContent).toContain("header.AppHeader:not");
     expect(report.hiddenTargets.map((item) => item.selector)).toEqual([...HIDE_SELECTORS]);
     expect(report.hiddenAds.map((item) => item.selector)).toEqual([...AD_SELECTORS]);
+    expect(report.hiddenTargets.find((item) => item.selector === "div.css-1g41cri")).toMatchObject({
+      reason: "知乎 hash class 侧栏/运营卡片",
+      volatile: true,
+    });
+    expect(report.hiddenAds.find((item) => item.selector === "div.Pc-feedAd-new")).toMatchObject({
+      reason: "新版 PC 信息流广告内容",
+      volatile: false,
+    });
     expect(report.hiddenTargets.every((item) => item.visibleCount === 0)).toBe(true);
     expect(report.hiddenAds.every((item) => item.visibleCount === 0)).toBe(true);
   });
@@ -132,6 +185,7 @@ describe("zhihu-web-toolkit", () => {
     expect(original.querySelector(".AppHeader-inbox")).toBe(nativeInbox);
     expect(original.querySelector(".AppHeader-profileEntry")).toBe(nativeProfile);
     expect(report.ruapjkMoved).toBe(true);
+    expect(report.ruapjkProxied).toBe(true);
     expect(report.missing).toEqual([]);
   });
 
@@ -144,11 +198,13 @@ describe("zhihu-web-toolkit", () => {
     const messageRects: DOMRect[] = [];
     const inboxRects: DOMRect[] = [];
 
-    nativeMessages.addEventListener("click", () => {
+    nativeMessages.addEventListener("click", (event) => {
+      event.preventDefault();
       messagesSpy();
       messageRects.push(nativeMessages.getBoundingClientRect());
     });
-    nativeInbox.addEventListener("click", () => {
+    nativeInbox.addEventListener("click", (event) => {
+      event.preventDefault();
       inboxSpy();
       inboxRects.push(nativeInbox.getBoundingClientRect());
     });
@@ -226,7 +282,10 @@ describe("zhihu-web-toolkit", () => {
     const staleSpy = vi.fn();
     const currentSpy = vi.fn();
 
-    nativeMessages.addEventListener("click", staleSpy);
+    nativeMessages.addEventListener("click", (event) => {
+      event.preventDefault();
+      staleSpy();
+    });
 
     const toolkit = createToolkit();
     toolkit.apply();
@@ -235,7 +294,8 @@ describe("zhihu-web-toolkit", () => {
     const proxyRect = new DOMRect(40, 8, 48, 34);
     const currentRects: DOMRect[] = [];
 
-    currentMessages.addEventListener("click", () => {
+    currentMessages.addEventListener("click", (event) => {
+      event.preventDefault();
       currentSpy();
       currentRects.push(currentMessages.getBoundingClientRect());
     });
@@ -380,6 +440,7 @@ describe("zhihu-web-toolkit", () => {
     expect(rebuilt.querySelector(`[${MOVED_ITEM_ATTR}='profile']`)).not.toBeNull();
     expect(rebuilt.querySelector(`[${MOVED_ITEM_ATTR}='ruapjk']`)).toBeNull();
     expect(toolkit.report().ruapjkMoved).toBe(false);
+    expect(toolkit.report().ruapjkProxied).toBe(false);
   });
 
   it("is idempotent when apply is called repeatedly", () => {
@@ -439,6 +500,55 @@ describe("zhihu-web-toolkit", () => {
     expect(report.active).toBe(true);
     expect(report.rebuiltHeaderFound).toBe(true);
     expect(report.ruapjkMoved).toBe(true);
+    expect(report.ruapjkProxied).toBe(true);
+  });
+
+  it("does not rebuild from an unrelated generic header", () => {
+    document.body.innerHTML = `
+      <div id="root">
+        <header>
+          <h1>普通站点标题</h1>
+        </header>
+        <main>
+          <div class="Card css-173vipd">vip</div>
+        </main>
+      </div>
+    `;
+
+    const toolkit = createToolkit();
+    const report = toolkit.apply();
+
+    expect(report.active).toBe(false);
+    expect(report.headerFound).toBe(false);
+    expect(document.querySelector(`header[${HEADER_ATTR}='true']`)).toBeNull();
+  });
+
+  it("can rebuild from a root-scoped generic header with Zhihu controls", () => {
+    document.body.innerHTML = `
+      <div id="root">
+        <header>
+          <a class="AppHeader-logo" href="https://www.zhihu.com/" aria-label="知乎">知乎</a>
+          <a href="https://www.zhihu.com/follow">关注</a>
+          <a href="https://www.zhihu.com/">推荐</a>
+          <a href="https://www.zhihu.com/hot">热榜</a>
+          <form class="SearchBar"><input placeholder="搜索知乎内容" /></form>
+          <button class="Button AppHeader-messages" type="button" aria-label="消息">消息</button>
+          <button class="Button AppHeader-inbox" type="button" aria-label="私信">私信</button>
+          <button class="Button AppHeader-profileEntry AppHeader-profile" type="button" aria-label="个人信息">
+            <img class="Avatar AppHeader-profileAvatar" alt="点击打开用户的主页" />
+          </button>
+          <div class="css-ruapjk"></div>
+        </header>
+      </div>
+    `;
+
+    const toolkit = createToolkit();
+    const report = toolkit.apply();
+
+    expect(report.active).toBe(true);
+    expect(report.headerFound).toBe(true);
+    expect(report.rebuiltHeaderFound).toBe(true);
+    expect(document.querySelectorAll(`header[${HEADER_ATTR}='true']`)).toHaveLength(1);
   });
 
   it("destroy removes injected artifacts without disturbing native header nodes", () => {
@@ -594,6 +704,47 @@ describe("zhihu-web-toolkit", () => {
     expect(document.documentElement.dataset.theme).toBeUndefined();
     expect(reloadSpy).toHaveBeenCalledOnce();
     expect(toolkit.report().themeMode).toBe("dark");
+  });
+
+  it("falls back to reload when Zhihu's native theme setter throws", () => {
+    createZhihuFixture();
+
+    const reloadSpy = vi.fn();
+    const nativeThemeError = new Error("theme setter changed");
+    const nativeThemeSpy = vi.fn(() => {
+      throw nativeThemeError;
+    });
+    installZhihuThemeFiber(nativeThemeSpy);
+    setNativeThemeReloader(reloadSpy);
+    const toolkit = createToolkit();
+    toolkit.apply();
+
+    document.getElementById(THEME_BUTTON_ID)!.click();
+
+    expect(location.search).toBe("?theme=dark");
+    expect(nativeThemeSpy).toHaveBeenCalledOnce();
+    expect(reloadSpy).toHaveBeenCalledOnce();
+    expect(console.warn).toHaveBeenCalledWith(
+      "[zhihu-web-toolkit] Failed to switch Zhihu theme without reload.",
+      nativeThemeError,
+    );
+  });
+
+  it("limits React fiber scanning and falls back to reload when the theme setter is too deep", () => {
+    createZhihuFixture();
+
+    const reloadSpy = vi.fn();
+    const nativeThemeSpy = vi.fn();
+    installDeepZhihuThemeFiber(nativeThemeSpy, 2005);
+    setNativeThemeReloader(reloadSpy);
+    const toolkit = createToolkit();
+    toolkit.apply();
+
+    document.getElementById(THEME_BUTTON_ID)!.click();
+
+    expect(location.search).toBe("?theme=dark");
+    expect(nativeThemeSpy).not.toHaveBeenCalled();
+    expect(reloadSpy).toHaveBeenCalledOnce();
   });
 
   it("keeps the word block manager button as a display-only placeholder", () => {

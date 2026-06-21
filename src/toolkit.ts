@@ -1,12 +1,13 @@
 import {
-  AD_SELECTORS,
+  AD_SELECTOR_CONFIGS,
   GLOBAL_KEY,
   HEADER_ATTR,
-  HIDE_SELECTORS,
-  MOVED_ITEM_ATTR,
-  TOP_BANNER_SELECTORS,
   FLOATING_CONTROLS_ID,
+  HIDE_SELECTOR_CONFIGS,
+  MOVED_ITEM_ATTR,
+  TOP_BANNER_SELECTOR_CONFIGS,
   WORD_BLOCK_BUTTON_ID,
+  type HiddenSelectorConfig,
 } from "./shared/constants";
 import { clearFixedPosition, getHref, isZhihuHost, readText, visibleCount } from "./shared/dom";
 import { createToolkitState, type ToolkitState } from "./shared/state";
@@ -129,19 +130,6 @@ export function destroy(state: ToolkitState, options?: DestroyOptions): void {
     state.cleanupCallbacks[index]();
   }
 
-  for (let index = state.movedItems.length - 1; index >= 0; index -= 1) {
-    const { node, placeholder } = state.movedItems[index];
-
-    node.removeAttribute(MOVED_ITEM_ATTR);
-
-    if (placeholder.parentNode) {
-      placeholder.parentNode.insertBefore(node, placeholder);
-      placeholder.remove();
-    } else {
-      placeholder.remove();
-    }
-  }
-
   state.rebuiltHeader?.remove();
   removeFloatingControls();
   removeStyle();
@@ -150,7 +138,6 @@ export function destroy(state: ToolkitState, options?: DestroyOptions): void {
   state.originalHeader = null;
   state.rebuiltHeader = null;
   state.floatingControls = null;
-  state.movedItems = [];
   state.geometryRestorers = [];
   state.cleanupCallbacks = [];
   state.missing = [];
@@ -163,6 +150,7 @@ export function destroy(state: ToolkitState, options?: DestroyOptions): void {
 export function report(state: ToolkitState): ToolkitReport {
   const rebuiltHeader = document.querySelector(`header[${HEADER_ATTR}='true']`);
   const floatingControls = document.getElementById(FLOATING_CONTROLS_ID);
+  const ruapjkProxied = Boolean(rebuiltHeader?.querySelector(".css-ruapjk"));
 
   return {
     active: state.applied,
@@ -173,27 +161,26 @@ export function report(state: ToolkitState): ToolkitReport {
     rebuiltHeaderFound: Boolean(rebuiltHeader),
     floatingControlsFound: Boolean(floatingControls),
     wordBlockButtonFound: Boolean(floatingControls?.querySelector(`#${WORD_BLOCK_BUTTON_ID}`)),
-    hiddenTargets: HIDE_SELECTORS.map((selector) => ({
-      selector,
-      count: document.querySelectorAll(selector).length,
-      visibleCount: visibleCount(selector),
-    })),
-    hiddenAds: AD_SELECTORS.map((selector) => ({
-      selector,
-      count: document.querySelectorAll(selector).length,
-      visibleCount: visibleCount(selector),
-    })),
-    hiddenTopBanners: TOP_BANNER_SELECTORS.map((selector) => ({
-      selector,
-      count: document.querySelectorAll(selector).length,
-      visibleCount: visibleCount(selector),
-    })),
+    hiddenTargets: buildHiddenReports(HIDE_SELECTOR_CONFIGS),
+    hiddenAds: buildHiddenReports(AD_SELECTOR_CONFIGS),
+    hiddenTopBanners: buildHiddenReports(TOP_BANNER_SELECTOR_CONFIGS),
     keptItems: Array.from(document.querySelectorAll(`header[${HEADER_ATTR}='true'] [${MOVED_ITEM_ATTR}]`)).map((element) => ({
       key: element.getAttribute(MOVED_ITEM_ATTR),
       text: readText(element),
       href: getHref(element),
     })),
     missing: state.missing.slice(),
-    ruapjkMoved: Boolean(rebuiltHeader?.querySelector(".css-ruapjk")),
+    ruapjkProxied,
+    ruapjkMoved: ruapjkProxied,
   };
+}
+
+function buildHiddenReports(configs: readonly HiddenSelectorConfig[]): ToolkitReport["hiddenTargets"] {
+  return configs.map((config) => ({
+    selector: config.selector,
+    count: document.querySelectorAll(config.selector).length,
+    reason: config.reason,
+    volatile: Boolean(config.volatile),
+    visibleCount: visibleCount(config.selector),
+  }));
 }
