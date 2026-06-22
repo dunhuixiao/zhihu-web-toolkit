@@ -6,6 +6,7 @@ import {
   THEME_BUTTON_ID,
   WORD_BLOCK_BUTTON_ID,
 } from "../../shared/constants";
+import { toggleWordBlockerPanel } from "../word-blocker/word-blocker";
 import { switchNativeThemeWithoutReload } from "./native-theme";
 
 export type ThemeMode = "dark" | "light";
@@ -56,7 +57,7 @@ export function mountFloatingControls(): HTMLElement {
   const wordBlockButton = createSquareButton(WORD_BLOCK_BUTTON_ID, WORD_BLOCK_LABEL);
   wordBlockButton.innerHTML = WORD_BLOCK_ICON;
   wordBlockButton.addEventListener("click", () => {
-    console.info("[zhihu-web-toolkit] Word block manager is not implemented yet.");
+    toggleWordBlockerPanel();
   });
 
   const backToTopButton = createSquareButton(BACK_TO_TOP_BUTTON_ID, BACK_TO_TOP_LABEL);

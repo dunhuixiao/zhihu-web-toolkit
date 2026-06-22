@@ -9,6 +9,7 @@ import {
   TOP_BANNER_SELECTORS,
 } from "../../shared/constants";
 import { buildFloatingControlsCss } from "../floating-controls/styles";
+import { buildWordBlockerCss } from "../word-blocker/styles";
 
 export function buildToolkitCss(): string {
   const hiddenSelectors = [...HIDE_SELECTORS, ...AD_SELECTORS, ...TOP_BANNER_SELECTORS];
@@ -183,7 +184,9 @@ header[${HEADER_ATTR}='true'] .css-ruapjk {
   }
 }
 
-${buildFloatingControlsCss()}`;
+${buildFloatingControlsCss()}
+
+${buildWordBlockerCss()}`;
 }
 
 export function injectStyle(): void {

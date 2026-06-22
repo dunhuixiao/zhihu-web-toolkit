@@ -43,6 +43,22 @@ export function createZhihuFixture(): void {
             </a>
           </div>
         </div>
+        <div class="Card TopstoryItem TopstoryItem-isRecommend" data-testid="word-card-safe">
+          <div class="ContentItem">
+            <h2 class="ContentItem-title">
+              <a href="https://www.zhihu.com/question/safe">普通知乎问题</a>
+            </h2>
+            <div class="RichContent">普通内容</div>
+          </div>
+        </div>
+        <div class="Card TopstoryItem TopstoryItem-isRecommend" data-testid="word-card-ai">
+          <div class="ContentItem">
+            <h2 class="ContentItem-title">
+              <a href="https://www.zhihu.com/question/ai">AI 漫画图片生成怎么做</a>
+            </h2>
+            <div class="RichContent">会被屏蔽的内容</div>
+          </div>
+        </div>
         <footer>footer</footer>
         <div class="WriteArea Card css-1x8qqvf">write</div>
       </main>

@@ -20,6 +20,7 @@ import {
   insertToolkitHeader,
 } from "./features/header-toolkit/header-toolkit";
 import { injectStyle, removeStyle } from "./features/hide-elements/styles";
+import { getWordBlockerReport, startWordBlocker, stopWordBlocker } from "./features/word-blocker/word-blocker";
 
 declare global {
   interface Window {
@@ -111,6 +112,7 @@ export function apply(state: ToolkitState): ToolkitReport {
   clearHeaderContainerPosition(shell.header);
 
   state.floatingControls = mountFloatingControls();
+  state.wordBlocker = startWordBlocker();
 
   state.applied = true;
 
@@ -131,6 +133,8 @@ export function destroy(state: ToolkitState, options?: DestroyOptions): void {
   }
 
   state.rebuiltHeader?.remove();
+  state.wordBlocker?.destroy();
+  stopWordBlocker();
   removeFloatingControls();
   removeStyle();
 
@@ -138,6 +142,7 @@ export function destroy(state: ToolkitState, options?: DestroyOptions): void {
   state.originalHeader = null;
   state.rebuiltHeader = null;
   state.floatingControls = null;
+  state.wordBlocker = null;
   state.geometryRestorers = [];
   state.cleanupCallbacks = [];
   state.missing = [];
@@ -151,6 +156,7 @@ export function report(state: ToolkitState): ToolkitReport {
   const rebuiltHeader = document.querySelector(`header[${HEADER_ATTR}='true']`);
   const floatingControls = document.getElementById(FLOATING_CONTROLS_ID);
   const ruapjkProxied = Boolean(rebuiltHeader?.querySelector(".css-ruapjk"));
+  const wordBlocker = getWordBlockerReport();
 
   return {
     active: state.applied,
@@ -161,6 +167,9 @@ export function report(state: ToolkitState): ToolkitReport {
     rebuiltHeaderFound: Boolean(rebuiltHeader),
     floatingControlsFound: Boolean(floatingControls),
     wordBlockButtonFound: Boolean(floatingControls?.querySelector(`#${WORD_BLOCK_BUTTON_ID}`)),
+    wordBlockPanelFound: wordBlocker.panelFound,
+    wordBlockKeywordCount: wordBlocker.keywordCount,
+    wordBlockRemovedCount: wordBlocker.removedCount,
     hiddenTargets: buildHiddenReports(HIDE_SELECTOR_CONFIGS),
     hiddenAds: buildHiddenReports(AD_SELECTOR_CONFIGS),
     hiddenTopBanners: buildHiddenReports(TOP_BANNER_SELECTOR_CONFIGS),

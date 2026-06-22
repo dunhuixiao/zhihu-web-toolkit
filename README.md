@@ -12,7 +12,7 @@
 - 对普通导航和搜索使用 clone/proxy 策略，降低对知乎 React 节点的侵入。
 - 隐藏配置中的侧边栏卡片、创作入口、盐选卡片、广告卡片、页脚、写回答区域和原始顶部 Header，并在调试报告中标注隐藏规则说明。
 - 添加悬浮工具按钮：
-  - 屏蔽词管理入口（当前为占位入口）。
+  - 屏蔽词管理：支持新增、删除和持久化关键词，并移除命中的知乎推荐内容。
   - 深色/浅色主题切换，优先尝试知乎原生主题入口，失败时回退到 reload 流程。
   - 回到顶部。
 - 暴露调试 API：`window.__zhihuWebToolkit`。
@@ -75,7 +75,7 @@ window.__zhihuWebToolkit.apply();
 window.__zhihuWebToolkit.destroy();
 ```
 
-`report()` 会返回当前状态，包括是否在知乎页面、是否找到原 Header、是否生成重建 Header、悬浮控件是否存在、隐藏目标的数量、可见数量、规则说明、易变标记、保留的 Header 入口、缺失项以及 `.css-ruapjk` 是否已代理到新 Header。为兼容旧调试习惯，报告会同时保留 `ruapjkMoved` 并新增更准确的 `ruapjkProxied`。
+`report()` 会返回当前状态，包括是否在知乎页面、是否找到原 Header、是否生成重建 Header、悬浮控件是否存在、屏蔽词面板和命中移除数量、隐藏目标的数量、可见数量、规则说明、易变标记、保留的 Header 入口、缺失项以及 `.css-ruapjk` 是否已代理到新 Header。为兼容旧调试习惯，报告会同时保留 `ruapjkMoved` 并新增更准确的 `ruapjkProxied`。
 
 ## 验证建议
 

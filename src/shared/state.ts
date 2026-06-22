@@ -3,6 +3,7 @@ export interface ToolkitState {
   originalHeader: Element | null;
   rebuiltHeader: HTMLElement | null;
   floatingControls: HTMLElement | null;
+  wordBlocker: { destroy: () => void } | null;
   headerObserver: MutationObserver | null;
   geometryRestorers: Array<() => void>;
   cleanupCallbacks: Array<() => void>;
@@ -15,6 +16,7 @@ export function createToolkitState(): ToolkitState {
     originalHeader: null,
     rebuiltHeader: null,
     floatingControls: null,
+    wordBlocker: null,
     headerObserver: null,
     geometryRestorers: [],
     cleanupCallbacks: [],

@@ -1,9 +1,13 @@
 import { beforeEach, vi } from "vitest";
 import { resetNativeThemeReloader } from "../src/features/floating-controls/floating-controls";
+import { stopWordBlocker } from "../src/features/word-blocker/word-blocker";
 
 beforeEach(() => {
+  stopWordBlocker();
+  vi.useRealTimers();
   document.head.innerHTML = "";
   document.body.innerHTML = "";
+  window.localStorage.clear();
   delete document.documentElement.dataset.theme;
   delete (window as { __zhihuWebToolkit?: unknown }).__zhihuWebToolkit;
   resetNativeThemeReloader();

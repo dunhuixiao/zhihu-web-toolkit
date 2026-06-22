@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { setNativeThemeReloader } from "../src/features/floating-controls/floating-controls";
+import { WORD_BLOCK_STORAGE_KEY } from "../src/features/word-blocker/storage";
 import {
   AD_SELECTORS,
   BACK_TO_TOP_BUTTON_ID,
@@ -21,6 +22,21 @@ function visibleCount(selector: string): number {
     const style = getComputedStyle(element);
     return style.display !== "none" && style.visibility !== "hidden";
   }).length;
+}
+
+function createWordBlockCard(title: string, testId: string): HTMLElement {
+  const card = document.createElement("div");
+  card.className = "Card TopstoryItem TopstoryItem-isRecommend";
+  card.dataset.testid = testId;
+  card.innerHTML = `
+    <div class="ContentItem">
+      <h2 class="ContentItem-title">
+        <a href="https://www.zhihu.com/question/${testId}">${title}</a>
+      </h2>
+      <div class="RichContent">${title} 的回答摘要</div>
+    </div>
+  `;
+  return card;
 }
 
 interface TestReactFiber {
@@ -633,6 +649,9 @@ describe("zhihu-web-toolkit", () => {
     expect(style?.textContent).not.toContain("color: var(--GBK04A, #121212) !important;\n  text-decoration");
     expect(report.floatingControlsFound).toBe(true);
     expect(report.wordBlockButtonFound).toBe(true);
+    expect(report.wordBlockPanelFound).toBe(false);
+    expect(report.wordBlockKeywordCount).toBe(0);
+    expect(report.wordBlockRemovedCount).toBe(0);
     expect(report.themeMode).toBe("light");
   });
 
@@ -747,17 +766,126 @@ describe("zhihu-web-toolkit", () => {
     expect(reloadSpy).toHaveBeenCalledOnce();
   });
 
-  it("keeps the word block manager button as a display-only placeholder", () => {
+  it("opens the word block manager panel from the floating button", () => {
     createZhihuFixture();
 
     const toolkit = createToolkit();
     toolkit.apply();
-    const beforeHtml = document.body.innerHTML;
 
     document.getElementById(WORD_BLOCK_BUTTON_ID)!.click();
 
-    expect(console.info).toHaveBeenCalledWith("[zhihu-web-toolkit] Word block manager is not implemented yet.");
-    expect(document.body.innerHTML).toBe(beforeHtml);
+    const panel = document.getElementById("zhihu-web-toolkit-word-block-panel");
+    expect(panel).not.toBeNull();
+    expect(panel?.dataset.open).toBe("true");
+    expect(panel?.querySelector(".zhihu-web-toolkit-word-block-empty")?.textContent).toBe("暂无屏蔽词");
+    expect(panel?.textContent).toContain("当前共有 0 个屏蔽词");
+    expect(console.info).not.toHaveBeenCalledWith("[zhihu-web-toolkit] Word block manager is not implemented yet.");
+    expect(toolkit.report().wordBlockPanelFound).toBe(true);
+  });
+
+  it("adds comma separated word block keywords, persists them, and removes existing matched cards", () => {
+    createZhihuFixture();
+
+    const toolkit = createToolkit();
+    toolkit.apply();
+    document.getElementById(WORD_BLOCK_BUTTON_ID)!.click();
+
+    const input = document.getElementById("zhihu-web-toolkit-word-block-input") as HTMLInputElement;
+    input.value = "AI，广告/测试/AI";
+    document.getElementById("zhihu-web-toolkit-word-block-add")!.click();
+
+    const keywords = Array.from(document.querySelectorAll(".zhihu-web-toolkit-word-block-keyword")).map((element) =>
+      element.textContent,
+    );
+    expect(keywords).toEqual(["AI", "广告", "测试"]);
+    expect(JSON.parse(window.localStorage.getItem(WORD_BLOCK_STORAGE_KEY) || "[]")).toEqual(["AI", "广告", "测试"]);
+    expect(document.querySelector("[data-testid='word-card-ai']")).toBeNull();
+    expect(document.querySelector("[data-testid='word-card-safe']")).not.toBeNull();
+    expect(toolkit.report()).toMatchObject({
+      wordBlockKeywordCount: 3,
+      wordBlockRemovedCount: 1,
+    });
+  });
+
+  it("loads saved word block keywords and removes matching content during apply", () => {
+    window.localStorage.setItem(WORD_BLOCK_STORAGE_KEY, JSON.stringify(["AI"]));
+    createZhihuFixture();
+
+    const toolkit = createToolkit();
+    const report = toolkit.apply();
+
+    expect(document.querySelector("[data-testid='word-card-ai']")).toBeNull();
+    expect(document.querySelector("[data-testid='word-card-safe']")).not.toBeNull();
+    expect(report.wordBlockKeywordCount).toBe(1);
+    expect(report.wordBlockRemovedCount).toBe(1);
+  });
+
+  it("removes later inserted matched content through the word block observer", async () => {
+    window.localStorage.setItem(WORD_BLOCK_STORAGE_KEY, JSON.stringify(["广告"]));
+    createZhihuFixture();
+
+    const toolkit = createToolkit();
+    toolkit.apply();
+    const laterCard = createWordBlockCard("这里有广告内容", "word-card-later");
+
+    document.querySelector("main")!.appendChild(laterCard);
+
+    await vi.waitFor(() => expect(document.querySelector("[data-testid='word-card-later']")).toBeNull());
+    expect(toolkit.report().wordBlockRemovedCount).toBe(1);
+  });
+
+  it("requires confirmation before deleting a word block keyword", () => {
+    window.localStorage.setItem(WORD_BLOCK_STORAGE_KEY, JSON.stringify(["AI", "广告"]));
+    createZhihuFixture();
+
+    const toolkit = createToolkit();
+    toolkit.apply();
+    document.getElementById(WORD_BLOCK_BUTTON_ID)!.click();
+
+    document.querySelector<HTMLButtonElement>(".zhihu-web-toolkit-word-block-delete")!.click();
+
+    expect(document.querySelector(".zhihu-web-toolkit-word-block-confirm")).not.toBeNull();
+    expect(JSON.parse(window.localStorage.getItem(WORD_BLOCK_STORAGE_KEY) || "[]")).toEqual(["AI", "广告"]);
+
+    document.querySelector<HTMLButtonElement>(".zhihu-web-toolkit-word-block-confirm")!.click();
+
+    expect(JSON.parse(window.localStorage.getItem(WORD_BLOCK_STORAGE_KEY) || "[]")).toEqual(["广告"]);
+    expect(Array.from(document.querySelectorAll(".zhihu-web-toolkit-word-block-keyword")).map((element) => element.textContent)).toEqual([
+      "广告",
+    ]);
+    expect(toolkit.report().wordBlockKeywordCount).toBe(1);
+  });
+
+  it("does not duplicate the word block panel when apply is called repeatedly", () => {
+    createZhihuFixture();
+
+    const toolkit = createToolkit();
+    toolkit.apply();
+    document.getElementById(WORD_BLOCK_BUTTON_ID)!.click();
+    toolkit.apply();
+    document.getElementById(WORD_BLOCK_BUTTON_ID)!.click();
+
+    expect(document.querySelectorAll("#zhihu-web-toolkit-word-block-panel")).toHaveLength(1);
+    expect(document.querySelectorAll(`#${WORD_BLOCK_BUTTON_ID}`)).toHaveLength(1);
+    expect(toolkit.report().wordBlockPanelFound).toBe(true);
+  });
+
+  it("removes the word block panel and stops scanning after destroy", async () => {
+    window.localStorage.setItem(WORD_BLOCK_STORAGE_KEY, JSON.stringify(["广告"]));
+    createZhihuFixture();
+
+    const toolkit = createToolkit();
+    toolkit.apply();
+    document.getElementById(WORD_BLOCK_BUTTON_ID)!.click();
+
+    toolkit.destroy({ silent: true });
+
+    const laterCard = createWordBlockCard("这里有广告内容", "word-card-after-destroy");
+    document.querySelector("main")!.appendChild(laterCard);
+    await Promise.resolve();
+
+    expect(document.getElementById("zhihu-web-toolkit-word-block-panel")).toBeNull();
+    expect(document.querySelector("[data-testid='word-card-after-destroy']")).toBe(laterCard);
   });
 
   it("exposes only the zhihu-web-toolkit debug API", () => {

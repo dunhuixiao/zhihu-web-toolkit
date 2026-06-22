@@ -21,6 +21,9 @@ export interface ToolkitReport {
   rebuiltHeaderFound: boolean;
   floatingControlsFound: boolean;
   wordBlockButtonFound: boolean;
+  wordBlockPanelFound: boolean;
+  wordBlockKeywordCount: number;
+  wordBlockRemovedCount: number;
   hiddenTargets: HiddenTargetReport[];
   hiddenAds: HiddenTargetReport[];
   hiddenTopBanners: HiddenTargetReport[];
