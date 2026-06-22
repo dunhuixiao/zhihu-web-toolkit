@@ -28,6 +28,7 @@ export function buildFloatingControlsCss(): string {
 }
 
 #${FLOATING_CONTROLS_ID} .zhihu-web-toolkit-square-button {
+  position: relative !important;
   width: 38px !important;
   height: 38px !important;
   min-width: 38px !important;
@@ -45,6 +46,48 @@ export function buildFloatingControlsCss(): string {
   padding: 0 !important;
   margin: 0 !important;
   animation: zhihu-web-toolkit-toolbar-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both !important;
+}
+
+#${FLOATING_CONTROLS_ID} .zhihu-web-toolkit-square-button::after {
+  content: attr(data-tooltip) !important;
+  position: absolute !important;
+  top: 50% !important;
+  right: calc(100% + 8px) !important;
+  transform: translateY(-50%) !important;
+  display: none !important;
+  max-width: 160px !important;
+  padding: 5px 8px !important;
+  border-radius: 4px !important;
+  background: rgba(18, 18, 18, 0.92) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18) !important;
+  font-size: 12px !important;
+  line-height: 18px !important;
+  letter-spacing: 0 !important;
+  white-space: nowrap !important;
+  pointer-events: none !important;
+}
+
+#${FLOATING_CONTROLS_ID} .zhihu-web-toolkit-square-button::before {
+  content: "" !important;
+  position: absolute !important;
+  top: 50% !important;
+  right: calc(100% + 3px) !important;
+  transform: translateY(-50%) !important;
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  border-top: 5px solid transparent !important;
+  border-bottom: 5px solid transparent !important;
+  border-left: 5px solid rgba(18, 18, 18, 0.92) !important;
+  pointer-events: none !important;
+}
+
+#${FLOATING_CONTROLS_ID} .zhihu-web-toolkit-square-button:hover::after,
+#${FLOATING_CONTROLS_ID} .zhihu-web-toolkit-square-button:hover::before,
+#${FLOATING_CONTROLS_ID} .zhihu-web-toolkit-square-button:focus-visible::after,
+#${FLOATING_CONTROLS_ID} .zhihu-web-toolkit-square-button:focus-visible::before {
+  display: block !important;
 }
 
 #${FLOATING_CONTROLS_ID} .zhihu-web-toolkit-square-button:hover,

@@ -17,7 +17,7 @@ const WORD_BLOCK_LABEL = "屏蔽词管理";
 const BACK_TO_TOP_LABEL = "回到顶部";
 
 const MOON_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 14.5A8.5 8.5 0 0 1 9.5 3a7 7 0 1 0 11.5 11.5Z"/></svg>`;
-const WORD_BLOCK_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" alt="${WORD_BLOCK_LABEL}"><path d="M4 5h16l-6.2 7.3V18l-3.6 2v-7.7L4 5Z"/><path d="M7.4 18.1 18.1 7.4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>`;
+const WORD_BLOCK_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5h16l-6.2 7.3V18l-3.6 2v-7.7L4 5Z"/><path d="M7.4 18.1 18.1 7.4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>`;
 const BACK_TO_TOP_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4 5.5 10.5l1.8 1.8 3.4-3.4V20h2.6V8.9l3.4 3.4 1.8-1.8L12 4Z"/></svg>`;
 
 let reloadNativeTheme = (): void => {
@@ -119,11 +119,8 @@ function createSquareButton(id: string, label: string): HTMLButtonElement {
   button.id = id;
   button.className = "zhihu-web-toolkit-square-button";
   button.type = "button";
-  button.title = label;
   button.setAttribute("aria-label", label);
-  if (label) {
-    button.setAttribute("alt", label);
-  }
+  button.dataset.tooltip = label;
   return button;
 }
 
@@ -135,9 +132,8 @@ function updateThemeButton(button: Element | null): void {
   const dark = isDarkTheme();
   const label = dark ? DARK_THEME_LABEL : LIGHT_THEME_LABEL;
 
-  button.title = label;
   button.setAttribute("aria-label", label);
-  button.setAttribute("alt", label);
+  button.dataset.tooltip = label;
   button.setAttribute("aria-pressed", String(dark));
   button.classList.toggle(FLOATING_BUTTON_ACTIVE_CLASS, dark);
 }

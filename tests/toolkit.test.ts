@@ -628,16 +628,17 @@ describe("zhihu-web-toolkit", () => {
     expect(themeButton).not.toBeNull();
     expect(wordBlockButton).not.toBeNull();
     expect(backToTopButton).not.toBeNull();
-    expect(themeButton?.getAttribute("title")).toBe("切换到暗黑模式");
-    expect(themeButton?.getAttribute("alt")).toBe("切换到暗黑模式");
+    expect(themeButton?.getAttribute("title")).toBeNull();
+    expect(themeButton?.dataset.tooltip).toBe("切换到暗黑模式");
     expect(themeButton?.getAttribute("aria-pressed")).toBe("false");
-    expect(wordBlockButton?.getAttribute("title")).toBe("屏蔽词管理");
-    expect(wordBlockButton?.getAttribute("alt")).toBe("屏蔽词管理");
-    expect(wordBlockButton?.querySelector("svg")?.getAttribute("alt")).toBe("屏蔽词管理");
-    expect(backToTopButton?.getAttribute("title")).toBe("回到顶部");
-    expect(backToTopButton?.getAttribute("alt")).toBe("回到顶部");
+    expect(wordBlockButton?.getAttribute("title")).toBeNull();
+    expect(wordBlockButton?.dataset.tooltip).toBe("屏蔽词管理");
+    expect(wordBlockButton?.querySelector("svg")?.getAttribute("alt")).toBeNull();
+    expect(backToTopButton?.getAttribute("title")).toBeNull();
+    expect(backToTopButton?.dataset.tooltip).toBe("回到顶部");
     expect(style?.textContent).toContain("width: 38px");
     expect(style?.textContent).toContain("bottom: 30px");
+    expect(style?.textContent).toContain("content: attr(data-tooltip)");
     expect(style?.textContent).toContain("var(--GBK99A, #fff)");
     expect(style?.textContent).toContain("html[data-theme='dark'] header");
     expect(style?.textContent).toContain("var(--GBK99A, #1a1a1a)");
@@ -697,7 +698,7 @@ describe("zhihu-web-toolkit", () => {
     const darkThemeButton = document.getElementById(THEME_BUTTON_ID)!;
 
     expect(darkThemeButton.classList.contains(FLOATING_BUTTON_ACTIVE_CLASS)).toBe(true);
-    expect(darkThemeButton.getAttribute("title")).toBe("切换到白天模式");
+    expect(darkThemeButton.dataset.tooltip).toBe("切换到白天模式");
     expect(darkThemeButton.getAttribute("aria-pressed")).toBe("true");
 
     darkThemeButton.click();
