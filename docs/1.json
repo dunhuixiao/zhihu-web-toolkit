@@ -1,9 +1,0 @@
-要创建一个可以在知乎（https://www.zhihu.com/）使用的JavaScript脚本，实现以下功能
-1. 重新构建<header>标签，仅保留知乎主页、关注、推荐、热榜、消息、私信、个人信息这些按钮，取消固定顶部
-2. 隐藏div class
-    1. Card CreatorEntrance GlobalSideBar-creator CreatorEntrance-link CreatorEntrance-Link--smallIcon
-    2. KfeCollection-CreateSaltCard
-    3. css-ga65ow
-    4. Card css-173vipd
-    5. footer
-    6. WriteArea Card css-1x8qqvf
