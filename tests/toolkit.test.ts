@@ -328,12 +328,12 @@ describe("zhihu-web-toolkit", () => {
   it("keeps rebuilt header controls interactive through proxies", () => {
     createZhihuFixture();
 
-    const searchSpy = vi.fn((event: Event) => event.preventDefault());
+    const searchButtonSpy = vi.fn((event: Event) => event.preventDefault());
     const inputSpy = vi.fn();
     const profileSpy = vi.fn();
 
-    const nativeSearch = document.querySelector<HTMLFormElement>(".SearchBar")!;
-    nativeSearch.addEventListener("submit", searchSpy);
+    const nativeSearch = document.querySelector<HTMLFormElement>(".SearchBar-tool")!;
+    nativeSearch.querySelector("button")!.addEventListener("click", searchButtonSpy);
     nativeSearch.querySelector("input")!.addEventListener("input", inputSpy);
     const nativeMessages = document.querySelector<HTMLElement>("#root header.AppHeader .AppHeader-messages")!;
     const nativeInbox = document.querySelector<HTMLElement>("#root header.AppHeader .AppHeader-inbox")!;
@@ -343,17 +343,17 @@ describe("zhihu-web-toolkit", () => {
     const toolkit = createToolkit();
     toolkit.apply();
     const rebuilt = document.querySelector(`header[${HEADER_ATTR}='true']`)!;
-    const proxySearch = rebuilt.querySelector<HTMLFormElement>(".SearchBar")!;
+    const proxySearch = rebuilt.querySelector<HTMLFormElement>(".SearchBar-tool")!;
 
     proxySearch.querySelector("input")!.value = "测试搜索";
-    proxySearch.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    proxySearch.querySelector("button")!.click();
     rebuilt.querySelector<HTMLElement>("[data-zhihu-web-toolkit-item='profile']")!.click();
 
     expect(
-      document.querySelector("#root header.AppHeader:not([data-zhihu-web-toolkit-header='true']) .SearchBar"),
+      document.querySelector("#root header.AppHeader:not([data-zhihu-web-toolkit-header='true']) .SearchBar-tool"),
     ).toBe(nativeSearch);
     expect(nativeSearch.querySelector("input")!.value).toBe("测试搜索");
-    expect(searchSpy).toHaveBeenCalledOnce();
+    expect(searchButtonSpy).toHaveBeenCalledOnce();
     expect(inputSpy).toHaveBeenCalledOnce();
     expect(rebuilt.querySelector(`[${MOVED_ITEM_ATTR}='messages']`)).not.toBe(nativeMessages);
     expect(rebuilt.querySelector(`[${MOVED_ITEM_ATTR}='inbox']`)).not.toBe(nativeInbox);
@@ -362,6 +362,48 @@ describe("zhihu-web-toolkit", () => {
     expect(document.querySelector("#root header.AppHeader .AppHeader-inbox")).toBe(nativeInbox);
     expect(document.querySelector("#root header.AppHeader .AppHeader-profile")).toBe(nativeProfile);
     expect(profileSpy).toHaveBeenCalledOnce();
+  });
+
+  it("proxies Enter in the rebuilt search box to Zhihu's native search button", () => {
+    createZhihuFixture();
+
+    const searchButtonSpy = vi.fn((event: Event) => event.preventDefault());
+    const nativeSearch = document.querySelector<HTMLFormElement>(".SearchBar-tool")!;
+    nativeSearch.querySelector("button")!.addEventListener("click", searchButtonSpy);
+
+    const toolkit = createToolkit();
+    toolkit.apply();
+    const rebuilt = document.querySelector(`header[${HEADER_ATTR}='true']`)!;
+    const proxySearch = rebuilt.querySelector<HTMLFormElement>(".SearchBar-tool")!;
+    const proxyInput = proxySearch.querySelector("input")!;
+    const enterEvent = new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "Enter" });
+
+    proxyInput.value = "回车搜索";
+    proxyInput.dispatchEvent(enterEvent);
+
+    expect(nativeSearch.querySelector("input")!.value).toBe("回车搜索");
+    expect(searchButtonSpy).toHaveBeenCalledOnce();
+    expect(enterEvent.defaultPrevented).toBe(true);
+  });
+
+  it("falls back to native form submit when no native search button exists", () => {
+    createZhihuFixture();
+
+    const nativeSearch = document.querySelector<HTMLFormElement>(".SearchBar-tool")!;
+    nativeSearch.querySelector("button")!.remove();
+    const searchSpy = vi.fn((event: Event) => event.preventDefault());
+    nativeSearch.addEventListener("submit", searchSpy);
+
+    const toolkit = createToolkit();
+    toolkit.apply();
+    const rebuilt = document.querySelector(`header[${HEADER_ATTR}='true']`)!;
+    const proxySearch = rebuilt.querySelector<HTMLFormElement>(".SearchBar-tool")!;
+
+    proxySearch.querySelector("input")!.value = "降级搜索";
+    proxySearch.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+
+    expect(nativeSearch.querySelector("input")!.value).toBe("降级搜索");
+    expect(searchSpy).toHaveBeenCalledOnce();
   });
 
   it("uses the real profile entry instead of Zhihu's hidden creator hint popover", () => {

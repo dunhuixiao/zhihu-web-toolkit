@@ -7,7 +7,14 @@ export function createZhihuFixture(): void {
           <a href="https://www.zhihu.com/follow">关注</a>
           <a href="https://www.zhihu.com/">推荐</a>
           <a href="https://www.zhihu.com/hot">热榜</a>
-          <form class="SearchBar"><input placeholder="搜索知乎内容" /></form>
+          <div class="SearchBar" role="search">
+            <form class="SearchBar-tool">
+              <label class="SearchBar-input">
+                <input type="text" placeholder="搜索知乎内容" />
+                <button class="Button SearchBar-searchButton" aria-label="搜索" type="button">搜索</button>
+              </label>
+            </form>
+          </div>
           <a class="Button AppHeader-messages" href="https://www.zhihu.com/notifications" aria-label="消息">
             <span>消息</span>
           </a>

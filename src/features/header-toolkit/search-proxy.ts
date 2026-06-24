@@ -36,6 +36,45 @@ function findSearchForm(root: Element | null): HTMLFormElement | null {
   return root.querySelector("form") || findSearchInput(root)?.closest("form") || null;
 }
 
+function isSearchButton(element: Element | null): element is HTMLButtonElement | HTMLInputElement {
+  if (element instanceof HTMLButtonElement) {
+    return true;
+  }
+
+  return element instanceof HTMLInputElement && ["button", "submit"].includes(element.type);
+}
+
+function findSearchButton(root: Element | null): HTMLButtonElement | HTMLInputElement | null {
+  if (!root) {
+    return null;
+  }
+
+  if (isSearchButton(root)) {
+    return root;
+  }
+
+  const selectors = [
+    "button[aria-label*='搜索']",
+    "input[aria-label*='搜索']",
+    "button.SearchBar-searchButton",
+    "input.SearchBar-searchButton",
+    ".SearchBar-searchButton",
+    "button[type='button']",
+    "button[type='submit']",
+    "input[type='submit']",
+    "input[type='button']",
+  ] as const;
+
+  for (const selector of selectors) {
+    const button = root.querySelector(selector);
+    if (isSearchButton(button) && !button.disabled) {
+      return button;
+    }
+  }
+
+  return null;
+}
+
 function setNativeInputValue(input: HTMLInputElement | HTMLTextAreaElement, value: string): void {
   const prototype = input instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
   const descriptor = Object.getOwnPropertyDescriptor(prototype, "value");
@@ -54,6 +93,12 @@ function submitNativeSearch(nativeSearch: Element, query: string): void {
   const nativeInput = findSearchInput(nativeSearch);
   if (nativeInput) {
     setNativeInputValue(nativeInput, query);
+  }
+
+  const nativeButton = findSearchButton(nativeSearch);
+  if (nativeButton) {
+    nativeButton.click();
+    return;
   }
 
   const nativeForm = findSearchForm(nativeSearch);
